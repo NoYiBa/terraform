@@ -4,6 +4,8 @@ var fs = require('fs');
 var config = JSON.parse(fs.readFileSync(__dirname + '/terraform.tfstate', 'utf8'));
 var resources = config.modules[0].resources;
 var ansible = {};
+var attributes = ['public_ip', 'private_ip','type'];
+
 for (var key in resources) {
   var resource = resources[key];
   if (resource.type == 'aws_instance') {
@@ -13,7 +15,7 @@ for (var key in resources) {
     var type = match[1];
     if (match) {
       host.type = type;
-      if (ansible[type]==null) {
+      if (ansible[type] == null) {
         ansible[type] = [];
       }
       ansible[type].push(host);
@@ -26,7 +28,9 @@ stream.once('open', function (fd) {
   function writeHost(host) {
     stream.write(host.public_ip);
     for (var key in host) {
-      stream.write(" " + key + "=" + host[key]);
+      if (attributes.indexOf(key) != -1) {
+        stream.write(" " + key + "=\"" + host[key] + "\"");
+      }
     }
     stream.write("\n");
   }
