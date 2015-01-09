@@ -8,6 +8,7 @@ resource "aws_instance" "db" {
   }
   #subnet_id = "${aws_subnet.tf-demo-net.id}"
   security_groups = ["${aws_security_group.default.name}"]
+  
 }
 
 resource "aws_route53_record" "tf-demo-db-record" {

@@ -14,7 +14,7 @@ resource "aws_instance" "www" {
     Name = "tfdemo-www-${count.index}"
     Project = "tf-demo"
   }
-  #subnet_id = "${aws_subnet.tf-demo-net.id}"
+
   security_groups = ["${aws_security_group.default.name}"]
 
   provisioner "remote-exec" {
@@ -24,7 +24,7 @@ resource "aws_instance" "www" {
     "sudo service nginx start"
     ]
   }
-  
+
 }
 
 resource "aws_route53_record" "tf-demo-www-record" {
