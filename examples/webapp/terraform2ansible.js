@@ -1,7 +1,25 @@
 #!/usr/local/bin/node
+
 var fs = require('fs');
 var config = JSON.parse(fs.readFileSync(__dirname + '/terraform.tfstate', 'utf8'));
 var resources = config.modules[0].resources;
+var ansible = {};
+for (var key in resources) {
+  var resource = resources[key];
+  if (resource.type == 'aws_instance') {
+    var host = resource.primary.attributes;
+    var myRegexp = /aws_instance\.([^.]*)/g;
+    var match = myRegexp.exec(key);
+    var type = match[1];
+    if (match) {
+      host.type = type;
+      if (ansible[type]==null) {
+        ansible[type] = [];
+      }
+      ansible[type].push(host);
+    }
+  }
+}
 
 var stream = fs.createWriteStream("private/inventory");
 stream.once('open', function (fd) {
@@ -13,20 +31,11 @@ stream.once('open', function (fd) {
     stream.write("\n");
   }
 
-  for (var key in resources) {
-    var resource = resources[key];
-    if (resource.type == 'aws_instance') {
-      var host = {
-        public_ip: resource.primary.attributes.public_ip,
-        private_ip: resource.primary.attributes.private_ip
-      };
-      var myRegexp = /aws_instance\.([^.]*)/g;
-      var match = myRegexp.exec(key);
-      if (match) {
-        host.type = match[1];
-      }
+  for (var key in ansible) {
+    stream.write("[" + key + "]\n");
+    ansible[key].forEach(function (host) {
       writeHost(host);
-    }
+    });
   }
 
   stream.end();
